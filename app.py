@@ -1,14 +1,20 @@
-from flask import Flask, render_template, request, redirect, url_for
+import os
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from scheduler import Scheduler, Employee
+from chatbot import ChatBot
 
 app = Flask(__name__)
 
-# In-memory store
-scheduler = Scheduler()
+# Persistent scheduler using data directory
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+scheduler = Scheduler(data_dir=DATA_DIR)
+chatbot = ChatBot(scheduler, data_dir=DATA_DIR)
 
 @app.route('/')
 def index():
-    schedule = scheduler.generate_schedule()
+    method = request.args.get('method', 'ai')
+    randomize = method == 'random'
+    schedule = scheduler.generate_schedule(randomize=randomize)
     return render_template('index.html', schedule=schedule, employees=scheduler.employees)
 
 @app.route('/employees', methods=['POST'])
@@ -35,13 +41,30 @@ def request_timeoff(emp_id):
 def import_file():
     file = request.files.get('file')
     if file and file.filename:
-        import os, tempfile
         from werkzeug.utils import secure_filename
-        path = os.path.join(tempfile.gettempdir(), secure_filename(file.filename))
+        fname = secure_filename(file.filename)
+        path = os.path.join(scheduler.import_dir, fname)
+        # avoid overwriting existing files
+        base, ext = os.path.splitext(path)
+        i = 1
+        while os.path.exists(path):
+            path = f"{base}_{i}{ext}"
+            i += 1
         file.save(path)
         scheduler.import_file(path)
-        os.remove(path)
     return redirect(url_for('index'))
+
+
+@app.route('/chat', methods=['GET', 'POST'])
+def chat():
+    if request.method == 'POST':
+        data = request.get_json(force=True)
+        message = data.get('message', '')
+        reply = chatbot.handle_message(message)
+        return jsonify({'reply': reply, 'prompt': chatbot.get_prompt()})
+    # initial load
+    prompt = chatbot.get_prompt()
+    return render_template('chat.html', prompt=prompt)
 
 if __name__ == '__main__':
     app.run(debug=True)

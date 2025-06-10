@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Set
 import os
+import random
 import pandas as pd
 import pdfplumber
 
@@ -24,9 +25,23 @@ class Employee:
     assigned_hours: int = 0
 
 class Scheduler:
-    def __init__(self):
+    def __init__(self, data_dir: str = "data"):
         self.employees: List[Employee] = []
         self.next_id = 1
+        self.data_dir = data_dir
+        self.import_dir = os.path.join(self.data_dir, "imports")
+        os.makedirs(self.import_dir, exist_ok=True)
+        self.load_imports()
+
+    def load_imports(self):
+        """Load all previously uploaded files."""
+        for fname in os.listdir(self.import_dir):
+            path = os.path.join(self.import_dir, fname)
+            try:
+                self.import_file(path)
+            except Exception:
+                # skip malformed files
+                continue
 
     def import_file(self, path: str):
         ext = os.path.splitext(path)[1].lower()
@@ -120,9 +135,27 @@ class Scheduler:
                         break
         return schedule
 
-    def generate_schedule(self):
+    def _random_schedule(self, schedule: Dict[str, Dict[str, str]]):
+        """Assign shifts randomly among available employees."""
+        shifts = [(d, s) for d in DAYS for s in SHIFTS]
+        random.shuffle(shifts)
+        for day, shift in shifts:
+            candidates = [emp for emp in self.employees
+                          if shift in emp.availability.get(day, set())
+                          and day not in emp.time_off
+                          and emp.assigned_hours + SHIFT_HOURS <= emp.max_hours]
+            if candidates:
+                emp = random.choice(candidates)
+                schedule[day][shift] = emp.name
+                emp.assigned_hours += SHIFT_HOURS
+        return self._heuristic_schedule(schedule)
+
+    def generate_schedule(self, randomize: bool = False):
         self.reset_hours()
         schedule = {d: {s: None for s in SHIFTS} for d in DAYS}
+
+        if randomize:
+            return self._random_schedule(schedule)
 
         if cp_model is None or not self.employees:
             return self._heuristic_schedule(schedule)

@@ -1,0 +1,11 @@
+{
+  "state": "ask_availability",
+  "roles": {},
+  "employees": [
+    {
+      "id": 53,
+      "name": "gauge",
+      "max_hours": 40
+    }
+  ]
+}

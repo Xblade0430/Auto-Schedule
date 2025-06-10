@@ -9,6 +9,16 @@
 <body class="bg-light">
     <div class="container py-4">
         <h1 class="mb-4">Weekly Schedule</h1>
+        <div class="d-flex gap-2 mb-3">
+            <form method="get" action="/">
+                <button type="submit" class="btn btn-success">AI Schedule</button>
+            </form>
+            <form method="get" action="/">
+                <input type="hidden" name="method" value="random">
+                <button type="submit" class="btn btn-warning">Random Schedule</button>
+            </form>
+            <a href="/chat" class="btn btn-info">Chatbot</a>
+        </div>
         <table class="table table-bordered table-striped">
             <thead class="table-dark">
                 <tr>
