@@ -49,7 +49,7 @@ async def list_employees(ctx):
     await ctx.send('```\n' + '\n'.join(lines) + '\n```')
 
 if __name__ == '__main__':
-    token = os.environ.get('DISCORD_TOKEN')
+    token = os.environ.get('MTM4MTgwNTUxMjYyMTk0ODk1OA.GrHNme.DAeZA7c3nM85N2G_EA9hncnklZbpaFm8rek0Dg')
     if not token:
         raise SystemExit('DISCORD_TOKEN environment variable not set.')
     bot.run(token)
