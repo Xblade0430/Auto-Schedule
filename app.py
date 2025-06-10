@@ -31,5 +31,17 @@ def request_timeoff(emp_id):
     scheduler.request_time_off(emp_id, day)
     return redirect(url_for('index'))
 
+@app.route('/import', methods=['POST'])
+def import_file():
+    file = request.files.get('file')
+    if file and file.filename:
+        import os, tempfile
+        from werkzeug.utils import secure_filename
+        path = os.path.join(tempfile.gettempdir(), secure_filename(file.filename))
+        file.save(path)
+        scheduler.import_file(path)
+        os.remove(path)
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
     app.run(debug=True)

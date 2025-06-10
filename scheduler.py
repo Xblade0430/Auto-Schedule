@@ -1,6 +1,9 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Set
+import os
+import pandas as pd
+import pdfplumber
 
 try:
     from ortools.sat.python import cp_model
@@ -24,6 +27,59 @@ class Scheduler:
     def __init__(self):
         self.employees: List[Employee] = []
         self.next_id = 1
+
+    def import_file(self, path: str):
+        ext = os.path.splitext(path)[1].lower()
+        if ext.endswith('xlsx'):
+            self._import_excel(path)
+        elif ext.endswith('pdf'):
+            self._import_pdf(path)
+
+    def _import_excel(self, path: str):
+        df = pd.read_excel(path)
+        for _, row in df.iterrows():
+            name = str(row.get('Name', '')).strip()
+            if not name:
+                continue
+            max_hours = int(row.get('MaxHours', 40))
+            emp = Employee(name=name, max_hours=max_hours)
+            self.add_employee(emp)
+            days = str(row.get('Days', '')).split(',')
+            shifts = str(row.get('Shifts', '')).split(',')
+            self.update_availability(emp.id,
+                [d.strip() for d in days if d.strip()],
+                [s.strip() for s in shifts if s.strip()])
+            for day in str(row.get('TimeOff', '')).split(','):
+                d = day.strip()
+                if d:
+                    self.request_time_off(emp.id, d)
+
+    def _import_pdf(self, path: str):
+        text = ''
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                if page.extract_text():
+                    text += page.extract_text() + '\n'
+        for line in text.splitlines():
+            parts = [p.strip() for p in line.split(',')]
+            if not parts:
+                continue
+            name = parts[0]
+            if not name:
+                continue
+            max_hours = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 40
+            emp = Employee(name=name, max_hours=max_hours)
+            self.add_employee(emp)
+            days = parts[2].split() if len(parts) > 2 else []
+            shifts = parts[3].split() if len(parts) > 3 else []
+            self.update_availability(emp.id,
+                [d.strip() for d in days if d.strip()],
+                [s.strip() for s in shifts if s.strip()])
+            timeoff = parts[4].split() if len(parts) > 4 else []
+            for day in timeoff:
+                day = day.strip()
+                if day:
+                    self.request_time_off(emp.id, day)
 
     def add_employee(self, employee: Employee):
         employee.id = self.next_id

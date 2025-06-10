@@ -30,6 +30,18 @@
             </tbody>
         </table>
 
+        <h2 class="mt-5">Import Data</h2>
+        <form method="post" action="/import" enctype="multipart/form-data" class="mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-9">
+                    <input class="form-control" type="file" name="file" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">Upload</button>
+                </div>
+            </div>
+        </form>
+
         <h2 class="mt-5">Add Employee</h2>
         <form method="post" action="/employees" class="row g-3 mb-4">
             <div class="col-md-6">
