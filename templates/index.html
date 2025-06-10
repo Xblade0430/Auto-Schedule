@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Scheduler</title>
+    <style>
+        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Weekly Schedule</h1>
+    <table>
+        <tr>
+            <th>Day</th>
+            {% for shift in ['morning', 'evening', 'night'] %}
+            <th>{{ shift.title() }}</th>
+            {% endfor %}
+        </tr>
+        {% for day, shifts in schedule.items() %}
+        <tr>
+            <td>{{ day }}</td>
+            {% for shift in ['morning', 'evening', 'night'] %}
+            <td>{{ shifts[shift] or '' }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Add Employee</h2>
+    <form method="post" action="/employees">
+        Name: <input type="text" name="name" required>
+        Max Hours: <input type="number" name="max_hours" value="40">
+        <button type="submit">Add</button>
+    </form>
+
+    <h2>Employees</h2>
+    <ul>
+        {% for emp in employees %}
+        <li>
+            {{ emp.name }} ({{ emp.max_hours }}h/week)
+            <form method="post" action="/availability/{{ emp.id }}">
+                Available Days:<br>
+                {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+                    <label><input type="checkbox" name="days" value="{{ day }}">{{ day }}</label>
+                {% endfor %}<br>
+                Shifts:<br>
+                {% for shift in ['morning','evening','night'] %}
+                    <label><input type="checkbox" name="shifts" value="{{ shift }}">{{ shift }}</label>
+                {% endfor %}<br>
+                <button type="submit">Update Availability</button>
+            </form>
+            <form method="post" action="/timeoff/{{ emp.id }}">
+                Request Day Off:
+                <select name="day">
+                    {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+                    <option value="{{ day }}">{{ day }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Add</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
