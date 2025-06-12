@@ -3,11 +3,13 @@ import json
 from typing import Dict, List
 import requests
 from scheduler import Scheduler, Employee
+from ai_engine import AIEngine
 
 class ChatBot:
     """Very simple stateful chatbot for gathering schedule info."""
     def __init__(self, scheduler: Scheduler, data_dir: str = "data"):
         self.scheduler = scheduler
+        self.ai = AIEngine()
         self.data_file = os.path.join(data_dir, "chat_state.json")
         if os.path.exists(self.data_file):
             with open(self.data_file, 'r') as f:
@@ -33,9 +35,9 @@ class ChatBot:
         lower = text.lower()
         if lower.startswith('search '):
             query = text.split(' ', 1)[1]
-            return self._search_web(query)
+            return self._answer_question(query)
         if text.endswith('?') and state == 'done':
-            return self._search_web(text)
+            return self._answer_question(text)
         if state == "ask_roles":
             self.data["roles"] = self._parse_roles(msg)
             self.data["state"] = "ask_employees"
@@ -92,9 +94,9 @@ class ChatBot:
             self._save()
             return self._format_schedule(schedule)
         else:
-            # after setup, treat questions ending with '?' as web searches
+            # after setup, treat questions ending with '?' as AI queries
             if msg.strip().endswith('?'):
-                return self._search_web(msg.strip())
+                return self._answer_question(msg.strip())
             schedule = self.scheduler.generate_schedule()
             return self._format_schedule(schedule)
 
@@ -130,6 +132,15 @@ class ChatBot:
             parts = [f"{sh}:{shifts[sh] or '-'}" for sh in ['morning','evening','night']]
             lines.append(f"{day}: " + ', '.join(parts))
         return "\n".join(lines)
+
+    def _answer_question(self, query: str) -> str:
+        """Answer a question using OpenAI if configured, falling back to web search."""
+        if self.ai.available:
+            try:
+                return self.ai.ask(query)
+            except Exception:
+                pass
+        return self._search_web(query)
 
     def _search_web(self, query: str) -> str:
         """Use DuckDuckGo Instant Answer API for simple web search."""

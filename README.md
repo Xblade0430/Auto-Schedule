@@ -1,4 +1,5 @@
 # Auto-Schedule
+# Auto-Schedule
 
 A simple web application that automatically generates employee schedules for a week.
 The interface is styled with [Bootstrap](https://getbootstrap.com/) for a clean, professional look.
@@ -79,3 +80,39 @@ Open `http://localhost:5000/chat` and follow the prompts:
 4. The bot will respond with the generated schedule.
 5. End your message with a question mark or start with `search ` to let the bot
    look up answers online.
+
+## AI Answers with OpenAI
+
+If you set the `OPENAI_API_KEY` environment variable, the chatbot will use
+[OpenAI](https://openai.com/) to answer questions. Without a key it falls back to
+DuckDuckGo web search.
+
+## Building a Productive AI Assistant
+
+The project demonstrates a few core building blocks of an autonomous assistant:
+
+1. **Language Model Integration** – handled in `ai_engine.py` which wraps the
+   OpenAI API.
+2. **Chat Interface** – provided by the Flask route `/chat` and the Discord bot
+   in `bot.py`.
+3. **Memory System** – conversation state is saved in `data/chat_state.json` so
+   previous answers are remembered.
+4. **Task Logic** – scheduling logic lives in `scheduler.py`, combining AI
+   solvers with heuristics.
+5. **Modular Design** – separate modules for the web app, Discord bot, chatbot
+   and AI engine keep the codebase organized.
+
+You can extend these pieces to create more advanced automation or connect to
+other services (calendars, spreadsheets, etc.).
+
+## AI Code Editor
+
+You can ask the AI to modify files in this project. Run:
+
+```sh
+python code_editor.py path/to/file.py "Your instruction here"
+```
+
+The editor uses OpenAI to rewrite the file according to your instruction and
+saves the updated content. Set the `OPENAI_API_KEY` environment variable before
+running the command.
